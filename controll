@@ -66,19 +66,19 @@ function start_bluetooth()
 # 启动蓝牙连接及事件发送服务
 function start_main_service()
 {
-    ${__DIR__}/server/btk_server.py 2>&1 > ${log_dir}/main.log
+    ${__DIR__}/server/btk_server.py 2>&1 > ${log_dir}/main.log &
 }
 
 # 启动键盘事件监听及发送服务
 function start_keyboard()
 {
-    ${__DIR__}/keyboard/kb_client.py 2>&1 > ${log_dir}/keyboard.log
+    ${__DIR__}/keyboard/kb_client.py 2>&1 > ${log_dir}/keyboard.log &
 }
 
 # 启动鼠标事件监听及发送服务
 function start_mouse()
 {
-    ${__DIR__}/mouse/mouse_client.py 2>&1 > ${log_dir}/mouse.log
+    ${__DIR__}/mouse/mouse_client.py 2>&1 > ${log_dir}/mouse.log &
 }
 
 case $1 in
