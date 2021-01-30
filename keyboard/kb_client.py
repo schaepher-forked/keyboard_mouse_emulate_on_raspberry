@@ -15,6 +15,9 @@ from evdev import *
 import keymap  # used to map evdev input to hid keodes
 import select
 
+DBUS_OBJ_BTK_NAME = 'org.thanhle.btkbservice'
+DBUS_OBJ_BTK_PATH = '/org/thanhle/btkbservice'
+
 # Define a client to listen to local key events
 class Keyboard():
 
@@ -44,9 +47,8 @@ class Keyboard():
         print("setting up DBus Client")
 
         self.bus = dbus.SystemBus()
-        self.btkservice = self.bus.get_object(
-            'org.thanhle.btkbservice', '/org/thanhle/btkbservice')
-        self.iface = dbus.Interface(self.btkservice, 'org.thanhle.btkbservice')
+        self.btkservice = self.bus.get_object(DBUS_OBJ_BTK_NAME, DBUS_OBJ_BTK_PATH)
+        self.iface = dbus.Interface(self.btkservice, DBUS_OBJ_BTK_NAME)
         print("waiting for keyboard")
         self.wait_keyboards()
 

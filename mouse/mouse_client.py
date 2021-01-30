@@ -16,6 +16,8 @@ import re
 
 logging.basicConfig(level=logging.DEBUG)
 
+DBUS_OBJ_BTK_NAME = 'org.thanhle.btkbservice'
+DBUS_OBJ_BTK_PATH = '/org/thanhle/btkbservice'
 
 class InputDevice():
     inputs = []
@@ -86,9 +88,8 @@ class MouseInput(InputDevice):
         self.change = False
         self.last = 0
         self.bus = dbus.SystemBus()
-        self.btkservice = self.bus.get_object(
-            'org.thanhle.btkbservice', '/org/thanhle/btkbservice')
-        self.iface = dbus.Interface(self.btkservice, 'org.thanhle.btkbservice')
+        self.btkservice = self.bus.get_object(DBUS_OBJ_BTK_NAME, DBUS_OBJ_BTK_PATH)
+        self.iface = dbus.Interface(self.btkservice, DBUS_OBJ_BTK_NAME)
         self.mouse_delay = 20 / 1000
         self.mouse_speed = 1
 
