@@ -4,6 +4,7 @@
 # keyboard copy client.
 # Reads local key events and forwards them to the btk_server DBUS service
 #
+
 import os  # used to all external commands
 import sys  # used to exit the script
 import dbus
@@ -11,7 +12,7 @@ import dbus.service
 import dbus.mainloop.glib
 import time
 import evdev  # used to get input from the keyboard
-from evdev import *
+from evdev import ecodes, InputDevice, list_devices
 import keymap  # used to map evdev input to hid keodes
 import select
 
@@ -95,15 +96,14 @@ class Keyboard():
     def event_loop(self):
         fd_to_device = {dev.fd: dev for dev in self.keyboards}
         while True:
-            r, w, e = select.select(fd_to_device, [], [])
-            for fd in r:
+            read_list, _, _ = select.select(fd_to_device, [], [])
+            for fd in read_list:
                 for event in fd_to_device[fd].read():
                     # only bother if we hit a key and its an up or down event
                     if event.type == ecodes.EV_KEY and event.value < 2:
                         self.change_state(event)
-                        evdev_code = ecodes.KEY[event.code]
                         print("sending key: %s, status: %s, key board code: %d, bluetooth code: %d" % (
-                                evdev_code,
+                                ecodes.KEY[event.code],
                                 ("UP" if event.value == 0 else "DOWN"),
                                 event.code, 
                                 self.state[4]
