@@ -189,10 +189,21 @@ modkeys = {
 }
 
 def convert(evdev_keycode):
-    return keytable[evdev_keycode]
+    if not isinstance(evdev_keycode, list):
+        evdev_keycode = [evdev_keycode]
+
+    for keycode in evdev_keycode:     
+        if keycode in keytable:
+            return keytable[keycode]
+  
+    return -1
 
 def modkey(evdev_keycode):
-    if evdev_keycode in modkeys:
-        return modkeys[evdev_keycode]
-    else:
-        return -1 # Return an invalid array element
+    if not isinstance(evdev_keycode, list):
+        evdev_keycode = [evdev_keycode]
+
+    for keycode in evdev_keycode:     
+        if keycode in modkeys:
+            return modkeys[keycode]
+ 
+    return -1 # Return an invalid array element

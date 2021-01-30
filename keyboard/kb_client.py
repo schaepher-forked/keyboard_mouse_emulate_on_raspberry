@@ -13,7 +13,7 @@ import time
 import evdev  # used to get input from the keyboard
 from evdev import *
 import keymap  # used to map evdev input to hid keodes
-
+import select
 
 # Define a client to listen to local key events
 class Keyboard():
@@ -48,18 +48,21 @@ class Keyboard():
             'org.thanhle.btkbservice', '/org/thanhle/btkbservice')
         self.iface = dbus.Interface(self.btkservice, 'org.thanhle.btkbservice')
         print("waiting for keyboard")
-        # keep trying to key a keyboard
+        self.wait_keyboards()
+
+    def wait_keyboards(self, device_dir='/dev/input'):
         have_dev = False
+        # keep trying to key a keyboard
         while have_dev == False:
-            try:
-                # try and get a keyboard - should always be event0 as
-                # we're only plugging one thing in
-                self.dev = InputDevice("/dev/input/event0")
-                have_dev = True
-            except OSError:
-                print("Keyboard not found, waiting 3 seconds and retrying")
-                time.sleep(3)
-            print("found a keyboard")
+            devices = [InputDevice(path) for path in list_devices(device_dir)]
+            self.keyboards = [dev for dev in devices if "Keyboard" in dev.name]
+            if self.keyboards:
+                for keyboard in self.keyboards:
+                    print("find keyboard: ", keyboard.name)
+                break
+
+            print("Keyboard not found, waiting 3 seconds and retrying")
+            time.sleep(3)
 
     def change_state(self, event):
         evdev_code = ecodes.KEY[event.code]
@@ -73,6 +76,9 @@ class Keyboard():
         else:
             # Get the keycode of the key
             hex_key = keymap.convert(ecodes.KEY[event.code])
+            if hex_key == -1:
+                return
+
             # Loop through elements 4 to 9 of the inport report structure
             for i in range(4, 10):
                 if self.state[i] == hex_key and event.value == 0:
@@ -85,11 +91,22 @@ class Keyboard():
 
     # poll for keyboard events
     def event_loop(self):
-        for event in self.dev.read_loop():
-            # only bother if we hit a key and its an up or down event
-            if event.type == ecodes.EV_KEY and event.value < 2:
-                self.change_state(event)
-                self.send_input()
+        fd_to_device = {dev.fd: dev for dev in self.keyboards}
+        while True:
+            r, w, e = select.select(fd_to_device, [], [])
+            for fd in r:
+                for event in fd_to_device[fd].read():
+                    # only bother if we hit a key and its an up or down event
+                    if event.type == ecodes.EV_KEY and event.value < 2:
+                        self.change_state(event)
+                        evdev_code = ecodes.KEY[event.code]
+                        print("sending key: %s, status: %s, key board code: %d, bluetooth code: %d" % (
+                                evdev_code,
+                                ("UP" if event.value == 0 else "DOWN"),
+                                event.code, 
+                                self.state[4]
+                        ))
+                        self.send_input()
 
     # forward keyboard events to the dbus service
     def send_input(self):
@@ -97,10 +114,7 @@ class Keyboard():
         element = self.state[2]
         for bit in element:
             bin_str += str(bit)
-        a = self.state
-        print(*a)
         self.iface.send_keys(int(bin_str, 2), self.state[4:10])
-
 
 if __name__ == "__main__":
 
