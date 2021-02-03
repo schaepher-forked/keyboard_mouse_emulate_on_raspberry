@@ -17,6 +17,7 @@ from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 import logging
 from logging import debug, info, warning, error
+import btk_dbus
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -35,23 +36,23 @@ class BTKbDevice():
     UUID = "00001124-0000-1000-8000-00805f9b34fb"
 
     def __init__(self):
-        print("2. Setting up BT device")
         self.init_bt_device()
         self.init_bluez_profile()
 
     # configure the bluetooth hardware device
     def init_bt_device(self):
-        print("3. Configuring Device name " + BTKbDevice.MY_DEV_NAME)
+        print("2. Start and config bluetooth device")
         # set the device class to a keybord and set the name
         os.system("hciconfig hci0 up")
         os.system("hciconfig hci0 class 0x0025C0")
         os.system("hciconfig hci0 name " + BTKbDevice.MY_DEV_NAME)
+        print("   bluetooth name is: ", BTKbDevice.MY_DEV_NAME)
         # make the device discoverable
         os.system("hciconfig hci0 piscan")
 
     # set up a bluez profile to advertise device capabilities from a loaded service record
     def init_bluez_profile(self):
-        print("4. Configuring Bluez Profile")
+        print("3. Configuring Bluez Profile")
         # setup profile options
         service_record = self.read_sdp_service_record()
         opts = {
@@ -63,11 +64,11 @@ class BTKbDevice():
         manager = dbus.Interface(bus.get_object(
             "org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
         manager.RegisterProfile("/org/bluez/hci0", BTKbDevice.UUID, opts)
-        print("6. Profile registered ")
+        print("5. Profile registered ")
 
     # read and return an sdp record from a file
     def read_sdp_service_record(self):
-        print("5. Reading service record")
+        print("4. Reading service record")
         try:
             fh = open(BTKbDevice.SDP_RECORD_PATH, "r")
         except:
@@ -115,7 +116,14 @@ if __name__ == "__main__":
             sys.exit("Only root can run this script")
 
         DBusGMainLoop(set_as_default=True)
-        myservice = BTKbService()
+
+        print("1. Setting up BTK device")
+        service = BTKbDevice()
+
+        print("6. Register service to dbus")
+        btk_dbus.BTKbService(service)
+        service.listen()
+
         loop = GLib.MainLoop()
         loop.run()
     except KeyboardInterrupt:
