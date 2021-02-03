@@ -15,6 +15,10 @@ import evdev  # used to get input from the keyboard
 from evdev import ecodes, InputDevice, list_devices
 import keymap  # used to map evdev input to hid keodes
 import select
+import logging
+from logging import error
+
+logging.basicConfig(level=logging.DEBUG)
 
 DBUS_OBJ_BTK_NAME = 'org.thanhle.btkbservice'
 DBUS_OBJ_BTK_PATH = '/org/thanhle/btkbservice'
@@ -116,7 +120,10 @@ class Keyboard():
         element = self.state[2]
         for bit in element:
             modifier_bin_str += str(bit)
-        self.iface.send_keys(int(modifier_bin_str, 2), self.state[4:10])
+        try:
+            self.iface.send_keys(int(modifier_bin_str, 2), self.state[4:10])
+        except dbus.exceptions.DBusException as err:
+            error(err)
 
 if __name__ == "__main__":
 
