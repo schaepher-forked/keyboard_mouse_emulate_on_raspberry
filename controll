@@ -63,22 +63,51 @@ function start_bluetooth()
     sudo /etc/init.d/bluetooth start
 }
 
+function stop_bluetooth()
+{
+    sudo hciconfig hci0 down
+    sudo /etc/init.d/bluetooth stop
+}
+
 # 启动蓝牙连接及事件发送服务
 function start_main_service()
 {
-    ${__DIR__}/server/btk_server.py 2>&1 > ${log_dir}/main.log &
+    ${__DIR__}/server/btk_server.py 2>&1 >> ${log_dir}/main.log &
+}
+
+function stop_main_service()
+{
+    stop btk_server.py
 }
 
 # 启动键盘事件监听及发送服务
 function start_keyboard()
 {
-    ${__DIR__}/keyboard/kb_client.py 2>&1 > ${log_dir}/keyboard.log &
+    ${__DIR__}/keyboard/kb_client.py 2>&1 >> ${log_dir}/keyboard.log &
+}
+
+function stop_keyboard()
+{
+    stop kb_client.py
 }
 
 # 启动鼠标事件监听及发送服务
 function start_mouse()
 {
-    ${__DIR__}/mouse/mouse_client.py 2>&1 > ${log_dir}/mouse.log &
+    ${__DIR__}/mouse/mouse_client.py 2>&1 >> ${log_dir}/mouse.log &
+}
+
+function stop_mouse()
+{
+    stop mouse_client.py
+}
+
+function stop() {
+    service=$1
+    pid=$(ps aux | grep ${service} | grep -v grep | awk '{print $2}')
+    if [[ ! -z "${pid}" ]]; then
+        sudo kill ${pid}
+    fi
 }
 
 case $1 in
@@ -103,6 +132,12 @@ case $1 in
         ;;
     start-mouse)
         start_mouse
+        ;;
+    stop-all)
+        stop_mouse
+        stop_keyboard
+        stop_main_service
+        stop_bluetooth
         ;;
     *) 
         help
